@@ -13,18 +13,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Docker Login
-      env:
-        DOCKER_USER: ${{secrets.DOCKER_USER}}
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      run:
-        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +%s)"
 
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{secrets.DOCKER_USER}}/test-repo:$(date +%s)
+      - name: Docker Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{secrets.DOCKER_USER}}
+          password: ${{secrets.DOCKER_PASSWORD}}
 
-    - name: Docker Push
-      run:
-        docker push avamerina/test-repo
+      - name: Build and push Docker image
+        run: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: ./Dockerfile
+          tags: avamerina/test-repo:latest, avamerina/test-repo:${{ steps.date.outputs.date }}
