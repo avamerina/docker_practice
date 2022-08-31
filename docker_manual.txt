@@ -1,0 +1,284 @@
+docker build .
+
+Отправляет  образ  и контекст (set of files with path/url) докерфайла демону на запуск (run)
+
+it’s best to start with an empty directory as context and keep your Dockerfile in that directory. Add only the files needed for building the Dockerfile.
+Do not use your root directory /, as the PATH for your build context, as it causes the build to transfer the entire contents of your hard drive to the Docker daemon.
+
+Для повышения производительности сборки добавляем некоторые файлы в.dockeringnore
+
+
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+
+
+1
+
+Install Docker on your computer
+https://docs.docker.com/engine/install/ubuntu/
+
+По умолчанию, доступ к docker daemon есть только у пользователя root. Чтобы с докером могли работать и другие пользователи, их нужно добавить в специальную группу — docker. Выполните эту команду из под обычного пользователя:
+
+sudo usermod -aG docker username ??
+
+2 
+
+docker version
+docker ps -a список хапущенных и остановленных контейнеров
+docker images список образов
+docker pull image_name:image_tag скачивает образ с dockerhub
+docker run image_name создание и запуск контейнера
+docker rm container_id удаление контейнера из списка
+
+3
+
+docker run busybox контейнер с линуксом с sh портом (оболочкой) без активного подключения к порту
+docker run -i (интерактивный) -t (терминал) busybox контейнер с подключением к sh оболочке
+через эту оболочку можно работать в линуксе находящемся внутри контейнера
+ #hostname показывает какое имя присвоено этой машине (совпадает с id контейнера)
+ #hostname -i покажет IP адрес контейнера, который докер присваивает автоматически каждому контейнеру
+ #ping 8.8.8.8 проверяет доступ в интернет из данного контейнера
+ #ping google.com показывает что dns сервер отрабатывает хорошо
+ #ls -la показывает файловую систему включая скрытые файлы
+ #exit остановит процесс
+ docker stop остановит контейнер
+ 
+ 4
+ 
+ docker container prune удалит все контейнеры включая остановленные
+ 
+ 5
+ 
+ docker run nginx
+ далее происходит автоматическое подключение к процессам внутри контейнера, видим список
+ процессов (логи)
+ docker ps 
+ видим контейнер nginx c портом 80/tcp означает что внутри контейнера открыт порт 80 и к нему можно подключиться используя веб браузер
+ но на данный момент невозможно подключиться к nginx веб серверу внутри контейнера со своего компьютера без настройки мэппинга портов
+ ctrl+c / exit останавливаем контейнер
+ 
+ docker run -d nginx запускает контейнер в фоновом режиме (отсоединенный) без входа в консоль nginxa
+ 
+ docker container inspect container_id детали контейнера
+ docker container inspect container_id | grep IPAdress находим ip адрес
+ 
+ переходим в браузер и вставляем ip адрес в строку браузера
+ 
+ docker stop container_id
+ docker kill container_id
+ 
+ docker exec запускаем дополнительный процесс в уже запущенном контейнере
+ 
+ docker exec -it container_id bash запуск интерактивного терминала в оболочке баш внутри работающего контейнера
+ #hostname -i показывает ip адрес машины
+ #ls
+ #cd /usr/share/nginx/html найдем файл index.html
+ #ls -la
+ #cat index.html файл, который будет передаваться всем, кто подключается к nginx, находящемуся внутри нашего контейнера, по 80 порту 
+ #exit завершен процесс bash внутри nginx, но nginx еще работает
+ docker stop завершен контейнер nginx
+ 
+ 6
+ 
+ docker run -d --name my_custom_name image_name устанавливает кастомное имя для контейнера
+ docker run -d --name my_nginx nginx
+ docker stop my_nginx
+ 
+ 7
+ mapping ports
+ 
+ docker run -p 8080:80 nginx чтобы открыть доступ к какому то сервису изнутри контейнера по порту (публичный, внешний порт: порт контейнера)
+ теперь можем иметь доступ к порту контейнера через браузер
+ docker run -d -p 8080:80 nginx создаем контейнер в фоновом режиме с маппингом портов (проброской)
+ docker ps
+  0.0.0.0:8080->80/tcp, :::8080->80/tcp видим проброску портов
+  (0.0.0.0 означают что можем использовать на своем компе любой ip адрес из доступных включая localhost или 127.0.0.1 с добавлением :8080)
+  в браузере введем http://127.0.0.1:8080/
+  При таком подключении попадем на порт 80 нашего контейнера по протоколу tcp из браузера
+  
+  8
+  
+  volume mapping
+  замена томов(директорий, папок)
+  
+  docker run -v(подключение тома) ${PWD}(путь к локальной папке):/usr/share/nginx/html (путь к папке внутри контейнера) nginx
+  содержимое тома по указанному пути внутри контейнера будет заменено содержимым тома по нашему локальному пути
+  
+  echo ${PWD} посмотреть абсолютный текущий путь
+  
+  docker run -v /home/madcat/docker_practice/nginx:/usr/share/nginx/html -p 8082:80 -d nginx
+  или находясь в директории тома:
+  docker run -v ${PWD}:/usr/share/nginx/html -p 8082:80 -d nginx
+  
+  sudo docker exec -it 383ef9f0109f bash открываем баш консоль внутри контейнера
+  #ls -ls
+  #cd usr/share/nginx/html
+  #cat index.html видим наш замененный файл вместо родного 
+
+9
+  docker run -it --rm busybox
+  #ls
+  #ping google.com
+  ctrl+c
+  контейнер автоматически удаляется после остановки (--rm)
+  
+ 10 
+ 
+ docker run \
+ 	--name my-nginx \
+ 	-v ${PWD}:/usr/share/nginx/html \
+ 	-p 8080:80 \
+ 	-d \
+ 	--rm \
+ 	nginx
+ перенос команд по строкам для читабельности
+ 
+ 11
+ 
+ docker container inspect container_id полная информация о контейнере
+ 
+ 12
+ 
+ создание образа для своего приложения
+ нужно записать все файлы приложения в этот образ, добавить инструкция по запуску приложения внутри контейнера, который будет собран по нашему образу
+ созданные образы можно загрузить на dockerhub
+ 
+ 1 
+ 
+ для создания образа необходим Dockerfile, который помещают в корень приложения
+ он содержит инструкции по созданию образа
+ каждая инструкция создает новый слой в образе
+ при создании образа можно указать имя и тег для образа(рекомендуется всегда делать это)
+ на основании готового образа создаем контейнер через docker run my_new_project_custom_image
+ создавать образ необходимо на основе базового образа
+ 
+ 2
+ 
+ FROM python:alpine базовый слой образа python как основа для нашего
+ WORKDIR /app создается рабочая директория внутри образа для файлов нашего приложения и переходит в эту директорию, после чего она становится (.) текущей для всех последующих команд
+ COPY . . копируем все файлы из локальной текущей папки (.) в папку внутри образа(а потом и контейнера) созданную с помощью workdir, то есть в /app, которая автоматически стала текущей директорией (.) 
+ CMD ['python', 'main.py'] указывает, какая команда будет выполнена когда создастся новый контейнер на основании уже созданного образа
+ в данном случае уже в готовом контейнере запускается процесс python с аргументом main.py, который уже был скопирован
+ 
+ docker build . запускает создание образа, с текущей директории, где должен располагаться Dockerfile (. это путь к докерфайл)
+ 
+ docker build -f dockerfile_custom_name . запуск создания для докерфайла с кастомным названием
+ 
+ docker build . -t image_custom_name:custom_tag создание образа с именем и тегом
+ docker run image_custom_name создание контейнера по образу
+ 
+ 3
+ docker images проверяем существующие образы
+ сd python_app переходим в директорию где находится докерфайл
+ docker build . -t my_new_image_name путь указан как точка так как мы находимся в той же директории что и докерфайл
+ docker images видим наш образ в списке образов
+ docker run -it my_new_image_name запускаем контейнер по нашему образу
+ 
+ начинает отрабатывать код, контейнер останавливается
+ 
+ 4
+ docker build . -t my_calendar:2.0.0 создаем вторую версию нашего приложения
+ docker run my_calendar
+ 
+ 5
+ sudo docker rmi 59d084b9c977 удалить образ
+ docker rmi -f 59d084b9c977 форсить на удаление
+ 
+ 6
+ создание нового репозитория на докерхаб
+ 
+ из директории где находится докерфайл:
+ docker build . -t image_name (если необходимо)
+ 
+ docker tag image_name avamerina/test-repo:image_tag_name(image_tag_name будет отображаться в списке образов в репозитории докерхаба)
+ sudo docker login
+ avamerina/spjt7
+ sudo docker push avamerina/test-repo:image_tag_name
+ docker logout (перезайти если пуш не проходит)
+ 
+ далее настраиваем билд на докерхабе на обновления мастер ветики с гитхаба, настраиваем вебхук
+ или настраиваем из гитхаба https://medium.com/platformer-blog/lets-publish-a-docker-image-to-docker-hub-using-a-github-action-f0b17e5cceb3
+ 
+ if EOFError: EOF when reading a line при запуске контейнера: 
+ docker run -i -t b80d07b0495a
+
+ 
+ 
+ Docker-compose
+ 1
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 	
+
+  
+  
+  
+  
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+
+
+
+
+
+
+
+
